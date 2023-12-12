@@ -9,15 +9,10 @@ export default [
     {
         name: 'login',
         path: '/login',
-        component: () => import('../modules/core/components/Login.vue'),
+        component: () => import('modules/core/components/Login.vue'),
     },
     {
-        name: 'register',
-        path: '/register',
-        component: () => import('../modules/core/components/Register.vue'),
-      },
-    {
         path: '/:catchAll(.*)',
-        component: () => import('../modules/core/components/Login.vue'),
-    }, // Not found
+        component: () => import('modules/core/components/Login.vue'),
+    },
 ]
