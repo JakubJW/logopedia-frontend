@@ -19,6 +19,7 @@
       "modules/*": ["./src/modules/*"],
       "assets/*": ["./src/assets/*"],
     },
+    "types": ["naive-ui/volar"],
 
     /* Linting */
     "strict": true,
