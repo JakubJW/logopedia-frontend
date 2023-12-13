@@ -1,5 +1,5 @@
 import { AxiosResponse } from "axios";
-import apiCLient from "../../core/api/apiClient";
+import apiClient from "../../core/api/apiClient";
 
 type TLoginResponse = {
     id: string,
@@ -9,12 +9,12 @@ type TLoginResponse = {
 
 export function useAuthApi() {
     async function login(payload: any) {
-        const response: AxiosResponse<TLoginResponse> = await apiCLient.post('/auth/login', payload);
+        const response: AxiosResponse<TLoginResponse> = await apiClient.post('/auth/login', payload);
         return response.data;
     };
     
     async function register(payload: any) {
-        const response: AxiosResponse<TLoginResponse> = await apiCLient.post('/auth/register', payload);
+        const response: AxiosResponse<TLoginResponse> = await apiClient.post('/auth/register', payload);
         return response.data;
     };
 
