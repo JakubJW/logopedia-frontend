@@ -6,58 +6,59 @@ import {
     FormRules, 
     NForm, 
     NFormItem, 
-    NButton 
+    NButton, 
+FormValidationError
 } from 'naive-ui'
 import { reactive, ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { useAuthApi } from 'modules/auth/api/auth'
 import { useAuthStore } from 'modules/auth/store/authStore'
+import { User } from "../types/user";
+
+type LoginForm = {
+    email: string | null,
+    password: string | null
+}
 
 const router = useRouter();
 const { login } = useAuthApi();
 const { updateUser } = useAuthStore();
 const formRef = ref<FormInst | null>(null);
-const loginFormRules = ref<FormRules>({
+const rules: FormRules = {
     email: {
         required: true,
-        message: 'Please input your name',
+        message: 'Adres e-mail jest wymagany',
         trigger: 'blur'
     },
     password: {
         required: true,
-        message: 'Please input your password',
+        message: 'Hasło jest wymagane',
         trigger: 'blur'
     },
-})
-const loginForm = reactive({
-    email: '',
-    password: ''
-})
-
-type TLoginResponse = {
-    id: string,
-    email: string,
-    sessionToken: string
 }
+
+const model = reactive<LoginForm>({
+    email: null,
+    password: null
+})
 
 function onSignIn(googleUser: CallbackTypes.CredentialCallback) {
     console.log(googleUser)
 }
 
-async function handleValidateClick (e: MouseEvent) {
-    e.preventDefault()
-    formRef.value?.validate(async (errors) => {
+async function handleValidateClick (formEl: FormInst | null) {
+    if (!formEl) return;
+
+    formEl.validate(async (errors: Array<FormValidationError> | undefined) => {
         if (!errors) {
-            const response = await login(loginForm);
-            handleLoginResponse(response);
-        } else {
-        console.log(errors)
-        console.log('Invalid')
+            await login(model).then((response) => {
+                handleLoginResponse(response)
+            })
         }
     })
 }
 
-function handleLoginResponse(payload: TLoginResponse) {
+function handleLoginResponse(payload: User) {
     updateUser(payload);
     router.push('/dashboard');
 }
@@ -68,13 +69,13 @@ function handleLoginResponse(payload: TLoginResponse) {
         <h1 class="mb-12 text-xl">Zaloguj się <br />do <strong>panelu logopedy</strong></h1>
         <n-form
             ref="formRef"
-            :model="loginForm"
-            :rules="loginFormRules"
+            :model="model"
+            :rules="rules"
             :show-label="false"
         >
             <n-form-item path="email" label="Email">
                 <n-input
-                    v-model:value="loginForm.email"
+                    v-model:value="model.email"
                     type="text" 
                     size="large" 
                     placeholder="E-mail"
@@ -82,11 +83,11 @@ function handleLoginResponse(payload: TLoginResponse) {
             </n-form-item>
             <n-form-item path="password" label="Password">
                 <n-input 
-                    v-model:value="loginForm.password"
+                    v-model:value="model.password"
                     type="password" 
                     show-password-on="click" 
                     size="large"
-                    placeholder="Password"
+                    placeholder="Hasło"
                 />
             </n-form-item>
             <n-form-item>
@@ -95,7 +96,8 @@ function handleLoginResponse(payload: TLoginResponse) {
                     secondary 
                     strong
                     class="w-full"
-                    @click="handleValidateClick"
+                    :disabled="!model.email || !model.password"
+                    @click="handleValidateClick(formRef)"
                  
                  >
                     Zaloguj
