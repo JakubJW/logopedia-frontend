@@ -1,64 +1,105 @@
 <script setup lang="ts">
 import { 
     NInput, 
-    FormInst, 
-    FormRules, 
     NForm, 
     NFormItem, 
-    NButton 
+    NButton,
+    FormInst,
+    FormItemInst,
+    FormItemRule,
+    FormValidationError,
+    FormRules, 
 } from 'naive-ui'
 import { reactive, ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { useAuthApi } from 'modules/auth/api/auth'
 import { useAuthStore } from 'modules/auth/store/authStore'
 
-const { register } = useAuthApi();
+type RegisterForm = {
+    email: string | null;
+    password: string | null;
+    repeatPassword: string | null;
+}
+
+const { register, login } = useAuthApi();
 const { updateUser } = useAuthStore();
 const router = useRouter();
 const formRef = ref<FormInst | null>(null);
-const rules = ref<FormRules>({
+const rPasswordFormItemRef = ref<FormItemInst | null>(null);
+const rules: FormRules = {
     email: {
         required: true,
-        message: 'Please input your name',
+        message: 'Adres e-mail jest wymagany',
         trigger: 'blur'
     },
     password: {
         required: true,
-        message: 'Please input your password',
-        trigger: 'blur'
+        message: 'Hasło jest wymagane',
     },
-    reenteredPassword: {
-        required: true,
-        message: 'Please input your password',
-        trigger: 'blur'
-    },
-})
-const model = reactive({
-    email: '',
-    password: '',
-    reenteredPassword: ''
+    repeatPassword: [
+        {   
+            required: true,
+            message: 'Powtórz hasło jest wymagane',
+            trigger: ['blur', 'input']
+        },
+        {   
+            validator: validatePasswordStartWith,
+            message: 'Podane hasła różnią się',
+            trigger: 'input'
+        },
+        {   
+            validator: validatePasswordSame,
+            message: 'Podane hasła różnią się',
+            trigger: ['blur', 'input']
+        }
+    ],
+}
+const model = reactive<RegisterForm>({
+    email: null,
+    password: null,
+    repeatPassword: null
 })
 
-async function handleValidateClick (e: MouseEvent) {
-    e.preventDefault()
-    formRef.value?.validate(async (errors) => {
+//@ts-ignore
+function validatePasswordStartWith(rule: FormItemRule, value: string): boolean {
+    return (
+        !!model.password &&
+        model.password.startsWith(value) &&
+        model.password.length >= value.length
+    );
+};
+
+//@ts-ignore
+function validatePasswordSame (rule: FormItemRule, value: string): boolean {
+    return value === model.password;
+};
+
+function handlePasswordInput() {
+    if (model.repeatPassword) {
+        rPasswordFormItemRef.value?.validate({ trigger: 'password-input' })
+    };
+};
+
+async function handleValidateClick (formEl: FormInst | null) {
+    if (!formEl) return;
+
+    formEl.validate(async (errors: Array<FormValidationError> | undefined) => {
         if (!errors) {
-            const response = await register({ 
+            await register({ 
                 email: model.email, 
                 password: model.password 
-            })
-            handleLoginResponse(response);
-        } else {
-        console.log(errors)
-        console.log('Invalid')
-        }
-    })
-}
+            }).then(async () => {
+                const response = await login({email: model.email, password: model.password});
+                handleLoginResponse(response);
+            });
+        };
+    });
+};
 
 function handleLoginResponse(payload: any) {
     updateUser(payload);
     router.push('/dashboard');
-}
+};
 </script>
 
 <template>
@@ -70,7 +111,10 @@ function handleLoginResponse(payload: any) {
             :rules="rules"
             :show-label="false"
         >
-            <n-form-item path="email" label="Email">
+            <n-form-item 
+                path="email" 
+                label="Email"
+            >
                 <n-input
                     v-model:value="model.email"
                     type="text" 
@@ -78,22 +122,32 @@ function handleLoginResponse(payload: any) {
                     placeholder="E-mail"
                 />
             </n-form-item>
-            <n-form-item path="password" label="Password">
+            <n-form-item 
+                path="password" 
+                label="Password"
+            >
                 <n-input 
                     v-model:value="model.password"
                     type="password" 
                     show-password-on="click" 
                     size="large"
-                    placeholder="Password"
+                    placeholder="Hasło"
+                    @input="handlePasswordInput"
                 />
             </n-form-item>
-            <n-form-item path="password" label="Password">
+            <n-form-item 
+                path="repeatPassword" 
+                label="Repeat password" 
+                ref="rPasswordFormItemRef"
+                first
+            >
                 <n-input 
-                    v-model:value="model.reenteredPassword"
+                    v-model:value="model.repeatPassword"
                     type="password" 
                     show-password-on="click" 
                     size="large"
-                    placeholder="Repeat password"
+                    placeholder="Powtórz hasło"
+                    :disabled="!model.password"
                 />
             </n-form-item>
             <n-form-item>
@@ -102,7 +156,8 @@ function handleLoginResponse(payload: any) {
                     secondary 
                     strong
                     class="w-full"
-                    @click="handleValidateClick"
+                    :disabled="!model.email || !model.password || !model.repeatPassword"
+                    @click="handleValidateClick(formRef)"
                  
                  >
                     Zarejestruj
