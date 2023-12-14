@@ -7,9 +7,9 @@ export default [
                 name: 'dashboard',
                 path: '/dashboard',
                 component: () => import('modules/dashboard/components/Dashboard.vue'),
-                meta: { requiresAuth: true }
             },        
         ],
+        meta: { requiresAuth: true }
     },
     {
         name: 'login',

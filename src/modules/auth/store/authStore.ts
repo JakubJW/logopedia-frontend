@@ -1,28 +1,29 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue';
+import type { User} from '../types/user'
 
-type TLoginResponse = {
-    id: string,
-    email: string,
-    sessionToken: string
-}
+type UserState = {
+    id: string | null,
+    email: string | null,
+    sessionToken: string | null
+};
 
 export const useAuthStore = defineStore('auth', () => {
-    const user = ref({
-        id: '',
-        email: '',
-        sessionToken: ''
+    const user = ref<UserState>({
+        id: null,
+        email: null,
+        sessionToken: null
     });
 
-    function updateUser(payload: TLoginResponse) {
+    function updateUser(payload: User) {
         user.value = Object.assign({}, user.value, payload);
     };
 
     function logout() {
         user.value = { 
-            id: '',
-            email: '',
-            sessionToken: ''
+            id: null,
+            email: null,
+            sessionToken: null
         };
     };
 
