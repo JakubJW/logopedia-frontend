@@ -17,9 +17,17 @@ export function useAuthApi() {
         
             return response.data.data;
     };
+    
+    async function loginWithGoogle(payload: {token: string}) {
+        const response: AxiosResponse<ApiResponse<User>> 
+            = await apiClient.post('/auth/loginWithGoogle', payload);
+        
+            return response.data.data;
+    };
 
     return {
         login,
+        loginWithGoogle,
         register
     };
 }
