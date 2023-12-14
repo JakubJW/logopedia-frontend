@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CallbackTypes } from "vue3-google-login";
+import { CallbackTypes } from "vue3-google-login";
 import { 
     NInput, 
     FormInst, 
@@ -7,7 +7,7 @@ import {
     NForm, 
     NFormItem, 
     NButton, 
-FormValidationError
+    FormValidationError
 } from 'naive-ui'
 import { reactive, ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
@@ -20,8 +20,9 @@ type LoginForm = {
     password: string | null
 }
 
+const localStorageKey = import.meta.env.VITE_AUTH_LOCAL_STORAGE_KEY;
 const router = useRouter();
-const { login } = useAuthApi();
+const { login, loginWithGoogle } = useAuthApi();
 const { updateUser } = useAuthStore();
 const formRef = ref<FormInst | null>(null);
 const rules: FormRules = {
@@ -42,8 +43,11 @@ const model = reactive<LoginForm>({
     password: null
 })
 
-function onSignIn(googleUser: CallbackTypes.CredentialCallback) {
-    console.log(googleUser)
+//@ts-ignore
+async function callback(response: any): CallbackTypes.CredentialCallback {
+    const userData = response.credential;
+    const res = await loginWithGoogle({ token: userData });
+    handleLoginResponse(res);
 }
 
 async function handleValidateClick (formEl: FormInst | null) {
@@ -60,6 +64,7 @@ async function handleValidateClick (formEl: FormInst | null) {
 
 function handleLoginResponse(payload: User) {
     updateUser(payload);
+    localStorage.setItem(localStorageKey, JSON.stringify(payload));
     router.push('/dashboard');
 }
 </script>
@@ -103,7 +108,7 @@ function handleLoginResponse(payload: User) {
                     Zaloguj
                 </n-button>
             </n-form-item>
-            <GoogleLogin :callback="onSignIn" />
+            <GoogleLogin :callback="callback" />
         </n-form>
         <div>
             Nie masz konta? 

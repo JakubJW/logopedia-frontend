@@ -7,17 +7,34 @@ const router = createRouter({
     routes
 })
 
+const localStorageKey = import.meta.env.VITE_AUTH_LOCAL_STORAGE_KEY
+
 router.beforeEach(async (to, from, next) => {
   console.log('Before Transition from ' + (from.name as string) + ' to ' + (to.name as string));
-  const { user } = useAuthStore();
   
-  if (to.meta.requiresAuth) {
-      const { sessionToken } = user;
-      sessionToken ? next() : next('/login');
+  const { updateUser } = useAuthStore();
+  const authJSON = localStorage.getItem(localStorageKey);
+  let authState;
+  
+  if (authJSON) {
+    authState = JSON.parse(authJSON);
+    updateUser(authState);
+  };
+
+  if (authState && authState.sessionToken) {
+    if (to.name === 'login' || to.name === 'register') {
+      next('/dashboard');
+    } else {
+      next();
+    }
+  } else {
+    if (to.meta.requiresAuth) {
+      next('/login');
     } else {
       next();
     };
-})
+  };
+});
 
 router.afterEach((to, from) => {
   console.log('Successfull Transition from ' + (from.name as string) + ' to ' + (to.name as string));
